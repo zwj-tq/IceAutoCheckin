@@ -1,0 +1,45 @@
+name: Auto Checkin
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
+
+jobs:
+  run-checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run checkin
+        env:
+          ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
+          LOGIN_URL: ${{ secrets.LOGIN_URL }}
+          LOGIN_METHOD: ${{ secrets.LOGIN_METHOD }}
+          LOGIN_HEADERS_JSON: ${{ secrets.LOGIN_HEADERS_JSON }}
+          LOGIN_PARAMS_JSON: ${{ secrets.LOGIN_PARAMS_JSON }}
+          LOGIN_FORM_JSON: ${{ secrets.LOGIN_FORM_JSON }}
+          LOGIN_JSON_BODY: ${{ secrets.LOGIN_JSON_BODY }}
+          TOKEN_PATH: ${{ secrets.TOKEN_PATH }}
+          CHECKIN_URL: ${{ secrets.CHECKIN_URL }}
+          CHECKIN_METHOD: ${{ secrets.CHECKIN_METHOD }}
+          CHECKIN_HEADERS_JSON: ${{ secrets.CHECKIN_HEADERS_JSON }}
+          CHECKIN_PARAMS_JSON: ${{ secrets.CHECKIN_PARAMS_JSON }}
+          CHECKIN_FORM_JSON: ${{ secrets.CHECKIN_FORM_JSON }}
+          CHECKIN_JSON_BODY: ${{ secrets.CHECKIN_JSON_BODY }}
+          CHECKIN_TOKEN_LOCATION: ${{ secrets.CHECKIN_TOKEN_LOCATION }}
+          CHECKIN_TOKEN_KEY: ${{ secrets.CHECKIN_TOKEN_KEY }}
+          CHECKIN_TOKEN_PREFIX: ${{ secrets.CHECKIN_TOKEN_PREFIX }}
+          REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
+        run: python checkin.py
