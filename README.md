@@ -15,10 +15,11 @@ Add these in `Settings -> Secrets and variables -> Actions`.
 ### Required
 
 - `ACCOUNTS_JSON`
-- `CHECKIN_URL`
+- `CHECKIN_URL` or `BASE_URL`
 
 ### Usually needed
 
+- `BASE_URL`
 - `TOKEN_PATH`
 - `CHECKIN_TOKEN_LOCATION`
 - `CHECKIN_TOKEN_KEY`
@@ -50,6 +51,21 @@ http://114.66.28.189:56999/api/user/login
 ```
 
 ### 2. Login request
+
+If your login API stays the same, you can usually set only `BASE_URL`:
+
+`BASE_URL`
+
+```text
+http://114.66.28.189:56999
+```
+
+Then the script will automatically use:
+
+- login: `/api/user/login`
+- check-in: `/api/playercenter/dakaApi`
+
+If you prefer, you can still set full URLs directly with `LOGIN_URL` and `CHECKIN_URL`.
 
 If your login API stays the same, you usually do not need to set these.
 
@@ -150,7 +166,12 @@ This means every 3 hours at minute 17 in UTC. You can adjust it in `.github/work
 
 ## What you still need to fill in
 
-The repository is ready for the login part, but the actual check-in API details still need to be configured:
+For the current ICE site, you can usually get started with just:
+
+- `ACCOUNTS_JSON`
+- `BASE_URL`
+
+If your target API is different, these may still need to be configured:
 
 - target check-in URL
 - whether the token goes in header, query, form, or JSON

@@ -4,11 +4,13 @@ import os
 import sys
 from copy import deepcopy
 from typing import Any
+from urllib.parse import urljoin
 
 import requests
 
 
-DEFAULT_LOGIN_URL = "http://114.66.28.189:56999/api/user/login"
+DEFAULT_LOGIN_PATH = "/api/user/login"
+DEFAULT_CHECKIN_PATH = "/api/playercenter/dakaApi"
 DEFAULT_CHECKIN_TOKEN_LOCATION = "header"
 DEFAULT_CHECKIN_TOKEN_KEY = "token"
 DEFAULT_CHECKIN_TOKEN_PREFIX = ""
@@ -57,6 +59,33 @@ def resolve_placeholders(value: Any, context: dict[str, Any]) -> Any:
     if isinstance(value, dict):
         return {key: resolve_placeholders(item, context) for key, item in value.items()}
     return value
+
+
+def build_url(base_url: str, path: str) -> str:
+    normalized_base_url = base_url.rstrip("/") + "/"
+    return urljoin(normalized_base_url, path.lstrip("/"))
+
+
+def resolve_request_url(
+    url_env_name: str,
+    *,
+    base_path: str,
+    context: dict[str, Any],
+    fallback_url: str | None = None,
+) -> str | None:
+    raw_url = env_str(url_env_name)
+    if raw_url:
+        return resolve_placeholders(raw_url, context)
+
+    raw_base_url = env_str("BASE_URL")
+    if raw_base_url:
+        base_url = resolve_placeholders(raw_base_url, context)
+        return build_url(str(base_url), base_path)
+
+    if fallback_url is not None:
+        return resolve_placeholders(fallback_url, context)
+
+    return None
 
 
 def deep_get(data: Any, path: str) -> Any:
@@ -171,7 +200,13 @@ def load_accounts() -> list[dict[str, Any]]:
 def login(account: dict[str, Any], timeout: int, session: requests.Session) -> str:
     context = deepcopy(account)
     account_name = str(account.get("name") or account["qq"])
-    url = resolve_placeholders(env_str("LOGIN_URL", DEFAULT_LOGIN_URL), context)
+    url = resolve_request_url(
+        "LOGIN_URL",
+        base_path=DEFAULT_LOGIN_PATH,
+        context=context,
+    )
+    if not url:
+        raise ValueError("LOGIN_URL or BASE_URL is required")
     method = env_str("LOGIN_METHOD", "POST")
     headers = resolve_placeholders(env_json("LOGIN_HEADERS_JSON", {}), context)
     params = resolve_placeholders(
@@ -217,9 +252,13 @@ def call_checkin(
     context["token"] = token
     account_name = str(account.get("name") or account["qq"])
 
-    url = resolve_placeholders(env_str("CHECKIN_URL"), context)
+    url = resolve_request_url(
+        "CHECKIN_URL",
+        base_path=DEFAULT_CHECKIN_PATH,
+        context=context,
+    )
     if not url:
-        raise ValueError("CHECKIN_URL is required")
+        raise ValueError("CHECKIN_URL or BASE_URL is required")
 
     method = env_str("CHECKIN_METHOD", "POST")
     headers = resolve_placeholders(env_json("CHECKIN_HEADERS_JSON", {}), context)
@@ -287,6 +326,7 @@ def main() -> int:
             logging.info("account=%s completed", account_name)
         except Exception as exc:  # noqa: BLE001
             failures.append(account_name)
+            print(f"{account_name}: 请求失败: {exc}")
             logging.exception("account=%s failed: %s", account_name, exc)
 
     if failures:

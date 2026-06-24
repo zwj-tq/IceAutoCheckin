@@ -25,6 +25,7 @@ jobs:
       - name: Run checkin
         env:
           ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
+          BASE_URL: ${{ secrets.BASE_URL }}
           LOGIN_URL: ${{ secrets.LOGIN_URL }}
           LOGIN_METHOD: ${{ secrets.LOGIN_METHOD }}
           LOGIN_HEADERS_JSON: ${{ secrets.LOGIN_HEADERS_JSON }}
