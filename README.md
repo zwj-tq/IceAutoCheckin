@@ -92,7 +92,7 @@ tianqing: 请求失败: HTTPConnectionPool(...)
 `BASE_URL`
 
 ```text
-http://114.66.28.189:56999
+http://your-server
 ```
 
 配置后脚本会自动拼接：
@@ -266,7 +266,7 @@ token
 `BASE_URL`
 
 ```text
-http://114.66.28.189:56999
+http://your-server
 ```
 
 `TOKEN_PATH`
