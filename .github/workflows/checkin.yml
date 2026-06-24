@@ -3,7 +3,7 @@ name: Auto Checkin
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */3 * * *"
+    - cron: "53 * * * *"
 
 jobs:
   run-checkin:
