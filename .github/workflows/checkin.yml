@@ -21,27 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run checkin
-        id: run_checkin
         env:
           ACCOUNTS_JSON: ${{ vars.ACCOUNTS_JSON }}
           BASE_URL: ${{ vars.BASE_URL }}
-        shell: bash
-        run: |
-          output=$(python checkin.py)
-          echo "$output"
-          {
-            echo 'log<<EOF'
-            echo "$output"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Send QQ group notification
-        if: success()
-        uses: lovefc/actions-qmsg@v1
-        with:
-          key: ${{ secrets.QMSG_KEY }}
-          groups: ${{ vars.QMSG_GROUPS }}
-          message: |
-            Auto Checkin 成功
-
-            ${{ steps.run_checkin.outputs.log }}
+        run: python checkin.py
