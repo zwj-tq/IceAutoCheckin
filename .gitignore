@@ -2,7 +2,3 @@ __pycache__/
 *.pyc
 .venv/
 test-local.ps1
-account.json
-node_modules/
-.wrangler/
-.dev.vars

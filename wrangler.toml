@@ -1,6 +1,0 @@
-name = "ice-auto-checkin"
-main = "src/worker.js"
-compatibility_date = "2026-06-25"
-
-[triggers]
-crons = ["53 * * * *"]
