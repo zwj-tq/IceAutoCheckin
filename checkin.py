@@ -11,6 +11,9 @@ import requests
 
 DEFAULT_LOGIN_PATH = "/api/user/login"
 DEFAULT_CHECKIN_PATH = "/api/playercenter/dakaApi"
+DEFAULT_TOKEN_PATH = "data.token"
+DEFAULT_REQUEST_TIMEOUT_SECONDS = 30
+DEFAULT_LOGIN_PARAMS = {"qq": "{{qq}}", "password": "{{password}}"}
 DEFAULT_CHECKIN_TOKEN_LOCATION = "header"
 DEFAULT_CHECKIN_TOKEN_KEY = "token"
 DEFAULT_CHECKIN_TOKEN_PREFIX = ""
@@ -67,23 +70,14 @@ def build_url(base_url: str, path: str) -> str:
 
 
 def resolve_request_url(
-    url_env_name: str,
     *,
     base_path: str,
     context: dict[str, Any],
-    fallback_url: str | None = None,
 ) -> str | None:
-    raw_url = env_str(url_env_name)
-    if raw_url:
-        return resolve_placeholders(raw_url, context)
-
     raw_base_url = env_str("BASE_URL")
     if raw_base_url:
         base_url = resolve_placeholders(raw_base_url, context)
         return build_url(str(base_url), base_path)
-
-    if fallback_url is not None:
-        return resolve_placeholders(fallback_url, context)
 
     return None
 
@@ -201,20 +195,19 @@ def login(account: dict[str, Any], timeout: int, session: requests.Session) -> s
     context = deepcopy(account)
     account_name = str(account.get("name") or account["qq"])
     url = resolve_request_url(
-        "LOGIN_URL",
         base_path=DEFAULT_LOGIN_PATH,
         context=context,
     )
     if not url:
-        raise ValueError("LOGIN_URL or BASE_URL is required")
-    method = env_str("LOGIN_METHOD", "POST")
-    headers = resolve_placeholders(env_json("LOGIN_HEADERS_JSON", {}), context)
+        raise ValueError("BASE_URL is required")
+    method = "POST"
+    headers: dict[str, Any] = {}
     params = resolve_placeholders(
-        env_json("LOGIN_PARAMS_JSON", {"qq": "{{qq}}", "password": "{{password}}"}),
+        DEFAULT_LOGIN_PARAMS,
         context,
     )
-    form = resolve_placeholders(env_json("LOGIN_FORM_JSON", None), context)
-    json_body = resolve_placeholders(env_json("LOGIN_JSON_BODY", None), context)
+    form = None
+    json_body = None
 
     response = send_request(
         "login",
@@ -234,7 +227,7 @@ def login(account: dict[str, Any], timeout: int, session: requests.Session) -> s
         print(f"{account_name} login: {json.dumps(payload, ensure_ascii=True)[:500]}")
     logging.info("login response=%s", response.text)
     try:
-        return find_token(payload, env_str("TOKEN_PATH"))
+        return find_token(payload, DEFAULT_TOKEN_PATH)
     except ValueError as exc:
         error_message = login_error_message(payload)
         if error_message:
@@ -253,22 +246,21 @@ def call_checkin(
     account_name = str(account.get("name") or account["qq"])
 
     url = resolve_request_url(
-        "CHECKIN_URL",
         base_path=DEFAULT_CHECKIN_PATH,
         context=context,
     )
     if not url:
-        raise ValueError("CHECKIN_URL or BASE_URL is required")
+        raise ValueError("BASE_URL is required")
 
-    method = env_str("CHECKIN_METHOD", "POST")
-    headers = resolve_placeholders(env_json("CHECKIN_HEADERS_JSON", {}), context)
-    params = resolve_placeholders(env_json("CHECKIN_PARAMS_JSON", {}), context)
-    form = resolve_placeholders(env_json("CHECKIN_FORM_JSON", None), context)
-    json_body = resolve_placeholders(env_json("CHECKIN_JSON_BODY", None), context)
+    method = "POST"
+    headers: dict[str, Any] = {}
+    params: dict[str, Any] = {}
+    form = None
+    json_body = None
 
-    token_location = env_str("CHECKIN_TOKEN_LOCATION", DEFAULT_CHECKIN_TOKEN_LOCATION)
-    token_key = env_str("CHECKIN_TOKEN_KEY", DEFAULT_CHECKIN_TOKEN_KEY)
-    token_prefix = env_str("CHECKIN_TOKEN_PREFIX", DEFAULT_CHECKIN_TOKEN_PREFIX)
+    token_location = DEFAULT_CHECKIN_TOKEN_LOCATION
+    token_key = DEFAULT_CHECKIN_TOKEN_KEY
+    token_prefix = DEFAULT_CHECKIN_TOKEN_PREFIX
     token_value = f"{token_prefix}{token}"
 
     if token_location == "header":
@@ -312,7 +304,7 @@ def call_checkin(
 
 def main() -> int:
     setup_logging()
-    timeout = int(env_str("REQUEST_TIMEOUT_SECONDS", "30"))
+    timeout = DEFAULT_REQUEST_TIMEOUT_SECONDS
     accounts = load_accounts()
 
     failures: list[str] = []
